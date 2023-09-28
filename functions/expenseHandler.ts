@@ -5,7 +5,7 @@ import { DatePropertyItemObjectResponse, MultiSelectPropertyItemObjectResponse, 
 import { getExpenseCategory } from "../util/getExpenseCategory";
 
 export async function expenseHandler(message: Message<boolean>) {
-    if (message.attachments) {
+    if (message.attachments.size !== 0) {
         message.attachments.forEach(async (attachment) => {
             const result = await banking(attachment.url)
 
@@ -34,7 +34,7 @@ export async function expenseHandler(message: Message<boolean>) {
                     Date: {
                         type: "date",
                         date: {
-                            start: new Date(result.date).toISOString()
+                            start: result.date.toISOString()
                         }
                     } as DatePropertyItemObjectResponse,
                     ...(!!tags ? {
@@ -52,7 +52,33 @@ export async function expenseHandler(message: Message<boolean>) {
 
     else {
         if (message.content[0] === "+") {
-            // TODO: Handle income
+            const data = message.content.split(" ")
+            if (data.length != 2) message.channel.send("+[Amount] [Name], remember?")
+            else {
+                await createNotionPage(
+                    process.env.NOTION_EXPENSES_DB ?? "",
+                    data[1],
+                    {
+                        Amount: {
+                            type: "number",
+                            number: parseFloat(data[0])
+                        } as NumberPropertyItemObjectResponse,
+                        Type: {
+                            type: 'select',
+                            select: {
+                                id: await getExpenseTypeTag('Income')
+                            }
+                        } as SelectPropertyItemObjectResponse,
+                        Date: {
+                            type: "date",
+                            date: {
+                                start: new Date(message.createdAt).toISOString()
+                            }
+                        } as DatePropertyItemObjectResponse,
+                    }
+                )
+                message.channel.send("Consider it done.")
+            }
         }
     }
 

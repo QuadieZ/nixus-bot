@@ -14,10 +14,10 @@ export async function getExpenseCategory(
 
     const response = await notion.databases.query({ database_id: process.env.NOTION_EXPENSES_CAT_DB ?? "", page_size: 100 })
 
-    const existingCategories = response.results.map(result => {
+    const existingCategories = response?.results?.map(result => {
         const nameProperty = (result as PageObjectResponse).properties['Name']
         const tagsProperty = (result as PageObjectResponse).properties['Tags'] as MultiSelectPropertyItemObjectResponse
-        const title = nameProperty.type === "title" ? nameProperty.title[0].plain_text : false
+        const title = nameProperty?.type === "title" ? nameProperty?.title[0]?.plain_text : false
         return (
             {
                 title,
@@ -41,7 +41,7 @@ export async function getExpenseCategory(
 
     const categoryResponse = await message.channel.awaitMessages({
         max: 1,
-        time: 1000,
+        time: 60000,
         errors: ["time"]
     }).catch(() => {
         message.channel.send("I can't create it if you don't give me category. Well, don't forget to add tags by yourself later then.")
@@ -53,14 +53,14 @@ export async function getExpenseCategory(
     const newCategory = categoryResponse.first()?.content
 
     if (newCategory) {
-        const mainTableTags = await Promise.all(newCategory.split(",").map(async (cat) => {
+        const mainTableTags = await Promise.all(newCategory.split(" ").map(async (cat) => {
             return {
                 id: await getExpenseTagsId(startCase(cat)),
                 name: startCase(cat)
             }
         }))
 
-        const categoryTableTags = await Promise.all(newCategory.split(",").map(async (cat) => {
+        const categoryTableTags = await Promise.all(newCategory.split(" ").map(async (cat) => {
             return {
                 id: await getCategoryExpenseTagId(startCase(cat)),
                 name: startCase(cat)

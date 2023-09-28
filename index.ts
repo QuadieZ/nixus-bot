@@ -1,10 +1,7 @@
 import { Client as DiscordClient, GatewayIntentBits } from 'discord.js';
 
-import { PSM, createWorker } from 'tesseract.js';
 import 'dotenv/config'
-import { banking } from './util';
-import { expenseHandler } from './functions';
-import { getDatabaseTags } from './util/notion/getDatabaseTags';
+import { expenseHandler } from './functions';;
 
 const discord = new DiscordClient({
     intents: [
