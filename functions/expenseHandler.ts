@@ -1,9 +1,10 @@
 import { Message } from "discord.js";
-import { banking } from "../util";
+import { banking, getExpenseTagsId, getExpenseTypeTag } from "../util";
 import { createNotionPage } from "../util/notion/createNotionPage";
+import { DatePropertyItemObjectResponse, MultiSelectPropertyItemObjectResponse, NumberPropertyItemObjectResponse, SelectPropertyItemObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { getExpenseCategory } from "../util/getExpenseCategory";
 
-export function expenseHandler(message: Message<boolean>) {
-
+export async function expenseHandler(message: Message<boolean>) {
     if (message.attachments) {
         message.attachments.forEach(async (attachment) => {
             const result = await banking(attachment.url)
@@ -14,6 +15,8 @@ export function expenseHandler(message: Message<boolean>) {
                 return
             }
 
+            const tags = await getExpenseCategory(result.recipient, message)
+
             await createNotionPage(
                 process.env.NOTION_EXPENSES_DB ?? "",
                 result.recipient,
@@ -21,20 +24,25 @@ export function expenseHandler(message: Message<boolean>) {
                     Amount: {
                         type: 'number',
                         number: parseFloat(result.amount)
-                    },
+                    } as NumberPropertyItemObjectResponse,
                     Type: {
                         type: 'select',
                         select: {
-                            // TODO: Determine expense category
-                            id: ''
+                            id: await getExpenseTypeTag('Outgo')
                         }
-                    },
+                    } as SelectPropertyItemObjectResponse,
                     Date: {
-                        type: 'date',
+                        type: "date",
                         date: {
                             start: new Date(result.date).toISOString()
                         }
-                    }
+                    } as DatePropertyItemObjectResponse,
+                    ...(!!tags ? {
+                        Tags: {
+                            type: 'multi_select',
+                            multi_select: tags
+                        } as MultiSelectPropertyItemObjectResponse,
+                    } : {})
                 }
             )
 

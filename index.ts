@@ -4,6 +4,7 @@ import { PSM, createWorker } from 'tesseract.js';
 import 'dotenv/config'
 import { banking } from './util';
 import { expenseHandler } from './functions';
+import { getDatabaseTags } from './util/notion/getDatabaseTags';
 
 const discord = new DiscordClient({
     intents: [
@@ -25,7 +26,7 @@ discord.on("messageCreate", async (message) => {
     if (message.channel.type === 0) {
         switch (message.channel.name) {
             case "expense":
-                expenseHandler(message)
+                await expenseHandler(message)
                 break;
             default:
                 break;
